@@ -3,7 +3,6 @@ use crate::square::Square;
 use std::fmt;
 use std::ops;
 
-
 /// A bitboard implementation using unsigned long long (u64).
 #[derive(Clone, Copy, Debug, Default, Eq, PartialOrd, Hash, PartialEq)]
 pub struct Bitboard(pub u64);
@@ -12,7 +11,7 @@ pub const EMPTY: Bitboard = Bitboard(0);
 pub const FULL: Bitboard = Bitboard(u64::MAX);
 
 impl Bitboard {
-    /// Create a new bitboard instance from a u64.
+    /// Create a new bitboard instance from a [`u64`].
     pub fn new(b: u64) -> Self {
         Bitboard(b)
     }

@@ -1,3 +1,5 @@
+use crate::color::Color;
+
 /// Exhaustive enum of all available piece types.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum Piece {
@@ -27,6 +29,22 @@ impl Piece {
     /// This is usually used for efficient table lookups.
     pub fn as_index(&self) -> usize {
         *self as usize
+    }
+
+    pub fn to_string(&self, color: Color) -> String {
+        let s: &str = match self {
+            Piece::Pawn => "P",
+            Piece::Knight => "N",
+            Piece::Bishop => "B",
+            Piece::Rook => "R",
+            Piece::Queen => "Q",
+            Piece::King => "K",
+        };
+
+        match color {
+            Color::White => s.to_string(),
+            Color::Black => s.to_lowercase(),
+        }
     }
 }
 

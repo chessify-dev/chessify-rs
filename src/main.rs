@@ -1,5 +1,7 @@
-///
+use chessify::{Bitboard, Board};
 
 fn main() {
-    println!("Hello, World!");
+    let b: Board = Board::default();
+    println!("{}", b);
+    b.print_bitboards();
 }

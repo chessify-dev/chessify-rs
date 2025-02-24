@@ -7,12 +7,14 @@ pub type Result<T> = result::Result<T, Box<dyn error::Error>>;
 
 #[derive(Debug)]
 pub enum Error {
+    BoardSetup(String),
     InvalidFen(String),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Error::BoardSetup(s) => write!(f, "{}", s),
             Error::InvalidFen(s) => write!(f, "{}", s),
         }
     }
