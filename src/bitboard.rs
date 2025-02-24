@@ -1,8 +1,8 @@
-//!
-//!
+use crate::square::Square;
 
 use std::fmt;
 use std::ops;
+
 
 /// A bitboard implementation using unsigned long long (u64).
 #[derive(Clone, Copy, Debug, Default, Eq, PartialOrd, Hash, PartialEq)]
@@ -13,8 +13,13 @@ pub const FULL: Bitboard = Bitboard(u64::MAX);
 
 impl Bitboard {
     /// Create a new bitboard instance from a u64.
-    pub fn new(b: u64) -> Bitboard {
-        Self(b)
+    pub fn new(b: u64) -> Self {
+        Bitboard(b)
+    }
+
+    /// Create a new bitboard instance from a [`Square`].
+    pub fn from_square(s: Square) -> Self {
+        Bitboard(1u64 << s.index())
     }
 }
 
