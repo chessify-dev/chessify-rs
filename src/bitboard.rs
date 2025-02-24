@@ -133,7 +133,7 @@ mod tests {
 
         let mut b3: Bitboard = Bitboard((1u64 << 5) - 1);
         b3 &= b1;
-        
+
         assert_eq!(b1, b3);
     }
 
@@ -181,6 +181,7 @@ mod tests {
     fn display() {
         let bb: Bitboard = Bitboard::new(4);
         let s: String = bb.to_string();
+
         assert_eq!('1', s.chars().nth(10).unwrap());
     }
 }
