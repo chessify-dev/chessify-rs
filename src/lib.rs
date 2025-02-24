@@ -17,3 +17,6 @@ pub use error::*;
 
 pub mod piece;
 pub use piece::*;
+
+pub mod square;
+pub use square::*;
