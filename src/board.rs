@@ -1,14 +1,17 @@
 use crate::bitboard::{Bitboard, EMPTY};
 use crate::color::{Color, NUM_COLORS};
-use crate::error::{Error, Result};
+use crate::error::{ChessifyError, Result};
 use crate::piece::{NUM_PIECES, Piece};
 use crate::square::Square;
 
 use std::collections::HashMap;
 use std::fmt;
 
+/// The standard starting position in chess.
 pub const DEFAULT_BOARD_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+///
+#[derive(Debug)]
 pub struct Board {
     bitboards: [Bitboard; NUM_PIECES * 2],
     pieces: HashMap<usize, (Piece, Color)>,
@@ -38,13 +41,20 @@ impl Board {
         Board::default()
     }
 
-    /// Create a new [`Board`] from a user specified Forsyth-Edwards-Notation (FEN)
-    /// string. 
+    /// Create a new [`Board`] from a user specified Forsyth-Edwards-Notation (FEN) string. 
     ///
     /// # Panics
     /// Iff the user provided an invalid FEN string.
     pub fn from_fen(fen: &str) -> Self {
         BoardBuilder::try_with_fen(fen).unwrap().try_build().unwrap()
+    }
+
+    /// Try and create a new [`Board`] from a user specified Forsyth-Edwards-Notation (FEN) string.
+    ///
+    /// # Errors
+    /// Iff the user provided an invalid FEN string.
+    pub fn try_from_fen(fen: &str) -> Result<Self> {
+        Ok(BoardBuilder::try_with_fen(fen)?.try_build()?)
     }
 
     pub fn print_bitboards(&self) {
@@ -77,7 +87,7 @@ impl fmt::Display for Board {
             }
             writeln!(f)?;
         }
-        write!(f, "    a b c d e f g h")
+        write!(f, "    a  b  c  d  e  f  g  h")
     }
 }
 
@@ -91,15 +101,15 @@ impl BoardBuilder {
     ///
     pub fn try_build(self) -> Result<Board> {
         let bitboards: [Bitboard; NUM_PIECES * NUM_COLORS] = self.bitboards.ok_or_else(|| {
-            Box::new(Error::BoardSetup("Bitboards not initialized".to_string()))
+            Box::new(ChessifyError::BoardSetup("Bitboards not initialized".to_string()))
         })?;
 
         let pieces: HashMap<usize, (Piece, Color)> = self.pieces.ok_or_else(|| {
-            Box::new(Error::BoardSetup("Pieces HashMap not initialized".to_string()))
+            Box::new(ChessifyError::BoardSetup("Pieces HashMap not initialized".to_string()))
         })?;
 
         let side_to_move: Color = self.side_to_move.ok_or_else(|| {
-            Box::new(Error::BoardSetup("Side to move not initialized".to_string()))
+            Box::new(ChessifyError::BoardSetup("Side to move not initialized".to_string()))
         })?;
 
         Ok(Board {
@@ -134,7 +144,7 @@ impl BoardBuilder {
     pub fn try_with_fen(fen: &str) -> Result<BoardBuilder> {
         let parts: Vec<&str> = fen.split_whitespace().collect();
         if parts.len() < 4 {
-            return Err(Box::new(Error::InvalidFen(fen.to_string())));
+            return Err(Box::new(ChessifyError::InvalidFen(fen.to_string())));
         }
 
         // Initialize board state as empty.
@@ -146,12 +156,12 @@ impl BoardBuilder {
         let mut rank: usize = 0;
         let mut file: usize = 0;
 
-        let piece_placement: &str = parts[0];
-        let _active_color: &str = parts[1];
-        let _castlng_rights: &str = parts[2];
-        let _en_passant_square: &str = parts[3];
+        let piece_placement_str: &str = parts[0];
+        let active_color_str: &str = parts[1];
+        let _castling_rights_str: &str = parts[2];
+        let _en_passant_square_str: &str = parts[3];
 
-        for c in piece_placement.chars() {
+        for c in piece_placement_str.chars() {
 
             if c == '/' {
                 rank += 1;
@@ -231,7 +241,7 @@ impl BoardBuilder {
                     color = Color::Black;
                 },
                 _ => {
-                    return Err(Box::new(Error::InvalidFen(fen.to_string())));
+                    return Err(Box::new(ChessifyError::InvalidFen(fen.to_string())));
                 }
             }
 
@@ -240,10 +250,21 @@ impl BoardBuilder {
             file += 1;
         }
 
+        let side_to_move: Color = Color::from_str(active_color_str)?;
+
+        /*
+        let mut castling_rights: CastlingRights = CastlingRights(0);
+
+        for c in castlng_rights_str.chars() {
+            'K' => todo!(),
+            _ => todo!(),
+        }
+        */
+
         Ok(BoardBuilder{
             bitboards: Some(bitboards),
             pieces: Some(pieces),
-            side_to_move: Some(Color::White),
+            side_to_move: Some(side_to_move),
         })
     }
 }
