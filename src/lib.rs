@@ -9,6 +9,9 @@ pub use bitboard::*;
 pub mod board;
 pub use board::*;
 
+pub mod castling_rights;
+pub use castling_rights::*;
+
 pub mod color;
 pub use color::*;
 

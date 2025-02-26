@@ -1,3 +1,5 @@
+use crate::error::{ChessifyError, Result};
+
 /// Exhaustive enum of the all available colors.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum Color {
@@ -16,6 +18,22 @@ impl Color {
     /// This is usually used for efficient table lookups.
     pub fn as_index(&self) -> usize {
         *self as usize
+    }
+
+    /// Create a new [`Color`] given a string.
+    ///
+    /// # Errors
+    /// If either the string is empty or the string does not contain any of ('w', 'W', 'b', 'B')
+    /// as the first character.
+    pub fn from_str(s: &str) -> Result<Color> {
+        match s.chars().next() {
+            Some(c) => match c {
+                'w' | 'W' => Ok(Color::White),
+                'b' | 'B' => Ok(Color::Black),
+                _ => Err(Box::new(ChessifyError::UnknownColor(s.to_string()))),
+            },
+            None => Err(Box::new(ChessifyError::UnknownColor(s.to_string()))),
+        }
     }
 }
 

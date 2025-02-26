@@ -1,24 +1,23 @@
+use thiserror::Error;
+
 use std::error;
-use std::fmt;
 use std::result;
 
 ///
 pub type Result<T> = result::Result<T, Box<dyn error::Error>>;
 
-#[derive(Debug)]
-pub enum Error {
+#[derive(Error, Debug, Eq, PartialEq)]
+pub enum ChessifyError {
+    #[error("board was not setup properly due to: `{0}`")]
     BoardSetup(String),
+
+    #[error("`{0}` is an invalid FEN string")]
     InvalidFen(String),
-}
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::BoardSetup(s) => write!(f, "{}", s),
-            Error::InvalidFen(s) => write!(f, "{}", s),
-        }
-    }
-}
+    #[error("could not parse `{0}` as a color")]
+    UnknownColor(String),
 
-impl error::Error for Error {}
+    #[error("unknown chessify error")]
+    Unknown,
+}
 
