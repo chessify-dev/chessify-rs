@@ -1,9 +1,11 @@
 use crate::error::{ChessifyError, Result};
 
+use std::fmt;
+
 /// Chess square implementation using an unsigned char ([`u8`]). 
 ///
 /// You can either create a [`Square`] by providing its representative board index
-/// (0-63) as a [`usize`] or by supplying a string which follows the standard chess notation.
+/// (0-63) or by supplying a string which follows the standard chess notation.
 ///
 /// The squares on the chess board are organized accordingly:
 ///
@@ -20,6 +22,37 @@ use crate::error::{ChessifyError, Result};
 ///
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub struct Square(pub u8);
+
+/// Implementation of a file on the chess board (vertically from 0 to 7).
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq, PartialOrd)]
+pub struct File(pub u8);
+
+impl fmt::Display for File {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s: &str = match self.0 {
+            0 => "a",
+            1 => "b",
+            2 => "c",
+            3 => "d",
+            4 => "e",
+            5 => "f",
+            6 => "g",
+            7 => "h",
+            _ => { return Err(fmt::Error); },
+        };
+        write!(f, "{}", s)
+    }
+}
+
+/// Implementation of a rank on the chess board (horizontally from 0 to 7).
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq, PartialOrd)]
+pub struct Rank(pub u8);
+
+impl fmt::Display for Rank {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", 1 + self.0)
+    }
+}
 
 impl Square {
     /// Create a new [`Square`] instance from an unsigned char ([`u8`]).
@@ -39,14 +72,24 @@ impl Square {
         Square((i as u8) & 63)
     }
 
-    /// Get the rank of the square as an unsigned char ([`u8`]).
-    pub fn rank(&self) -> u8 {
-        7 - self.0 / 8
+    /// Get the file of the square as an unsigned char ([`u8`]).
+    pub fn file_as_u8(&self) -> u8 {
+        self.0 % 8
     }
 
-    /// Get the file of the square as an unsigned char ([`u8`]).
-    pub fn file(&self) -> u8 {
-        self.0 % 8
+    /// Get the rank of the square as an unsigned char ([`u8`]).
+    pub fn rank_as_u8(&self) -> u8 {
+        7 - (self.0 / 8)
+    }
+
+    /// Get the file of the square as a [`File`].
+    pub fn file(&self) -> File {
+        File(self.0 % 8)
+    }
+
+    /// Get the rank of the square as a [`Rank`].
+    pub fn rank(&self) -> Rank {
+        Rank(7 - (self.0 / 8))
     }
 
     /// Get the squares index value as a [`usize`].
@@ -141,8 +184,48 @@ impl Square {
     }
 }
 
+impl fmt::Display for Square {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.file(), self.rank())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    #[test]
+    fn from_str_ok() {
+        let h1 = Square::from_str("h1");
+        let c8 = Square::from_str("c8");
+        let e4 = Square::from_str("E4");
+
+        assert_eq!(Square(63), h1);
+        assert_eq!(Square::new(2), c8);
+        assert_eq!(Square::from_index(36 as usize), e4);
+        assert_eq!(63 as usize, h1.index());
+    }
+
+    #[test]
+    fn file_and_rank_ok() {
+        let d7 = Square::from_str("d7");
+        let f1 = Square::from_str("f1");
+
+        assert_eq!(6u8, d7.rank_as_u8());
+        assert_eq!(Rank(6), d7.rank());
+
+        assert_eq!(5u8, f1.file_as_u8());
+        assert_eq!(File(5), f1.file());
+
+        let ds = d7.to_string();
+        let fs = f1.to_string();
+        assert_eq!('d', ds.chars().next().unwrap());
+        assert_eq!('1', fs.chars().nth(1).unwrap());
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_str_err() {
+        Square::from_str("q4");
+    }
 }
