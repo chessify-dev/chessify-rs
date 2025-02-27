@@ -1,28 +1,57 @@
 use crate::error::{ChessifyError, Result};
 
+/// Chess square implementation using an unsigned char ([`u8`]). 
+///
+/// You can either create a [`Square`] by providing its representative board index
+/// (0-63) as a [`usize`] or by supplying a string which follows the standard chess notation.
+///
+/// The squares on the chess board are organized accordingly:
+///
+///  a8 b8 c8 d8 e8 f8 g8 h8
+///  a7 b7 c7 d7 e7 f7 g7 h7
+///  a6 b6 c6 d6 e6 f6 g6 h6
+///  a5 b5 c5 d5 e5 f5 g5 h5
+///  a4 b4 c4 d4 e4 f4 g4 h4
+///  a3 b3 c3 d3 e4 f4 g4 h4
+///  a2 b2 c2 d2 e2 f2 g2 h2
+///  a1 b1 c1 d1 r1 f1 g1 h1
+///
+///  where a8 has index 0 and h1 has index 63, i.e., indices go from top to bottom + left to right.
 ///
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub struct Square(pub u8);
 
 impl Square {
+    /// Create a new [`Square`] instance from an unsigned char ([`u8`]).
     ///
+    /// # Note
+    /// Any value > 63 will be truncated to 63 and thus represent the h1 square.
+    pub fn new(b: u8) -> Self {
+        Square(b & 63)
+    }
+
+    /// Create a new [`Square`] instance from a [`usize`].
+    ///
+    /// # Note
+    /// This simply casts the usize to a u8 and truncates any values > 63.
+    /// Intended to be used for more efficient table lookups.
     pub fn from_index(i: usize) -> Self {
-        Square(i as u8)
+        Square((i as u8) & 63)
     }
 
-    ///
+    /// Get the rank of the square as an unsigned char ([`u8`]).
     pub fn rank(&self) -> u8 {
-        8 - self.0 / 8
+        7 - self.0 / 8
     }
 
-    ///
+    /// Get the file of the square as an unsigned char ([`u8`]).
     pub fn file(&self) -> u8 {
         self.0 % 8
     }
 
-    ///
-    pub fn index(&self) -> u8 {
-        self.0
+    /// Get the squares index value as a [`usize`].
+    pub fn index(&self) -> usize {
+        self.0 as usize
     }
 
     /// Create a new [`Square`] instance from a string.
@@ -110,4 +139,10 @@ impl Square {
 
         Ok(s)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
 }
