@@ -4,10 +4,11 @@ use std::fmt;
 use std::ops;
 
 /// A bitboard implementation using unsigned long long (u64).
+/// One bit being set at a position indicates a piece placement there.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialOrd, Hash, PartialEq)]
 pub struct Bitboard(pub u64);
 
-pub const EMPTY: Bitboard = Bitboard(0);
+pub const EMPTY: Bitboard = Bitboard(0u64);
 pub const FULL: Bitboard = Bitboard(u64::MAX);
 
 impl Bitboard {
@@ -106,21 +107,14 @@ impl ops::Not for &Bitboard {
 
 impl fmt::Display for Bitboard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut s: String = String::from("");
         for rank in 0..8 {
             for file in 0..8 {
                 let mask: u64 = 1u64 << (rank * 8 + file);
-
-                if file == 0 {
-                    s.push_str(&format!(" {} ", 8 - rank));
-                }
-
-                s.push_str(&format!(" {} ", if self.0 & mask != 0 { '1' } else { '0' }));
+                write!(f, " {} ", if self.0 & mask != 0 { '1' } else { '0' })?;
             }
-            s.push('\n');
+            writeln!(f)?;
         }
-        s.push_str("    a  b  c  d  e  f  g  h\n");
-        write!(f, "{}", s)
+        write!(f, "")
     }
 }
 
@@ -186,6 +180,6 @@ mod tests {
         let bb: Bitboard = Bitboard::new(4);
         let s: String = bb.to_string();
 
-        assert_eq!('1', s.chars().nth(10).unwrap());
+        assert_eq!('1', s.chars().nth(7).unwrap());
     }
 }

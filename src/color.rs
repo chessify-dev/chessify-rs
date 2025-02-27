@@ -1,13 +1,13 @@
 use crate::error::{ChessifyError, Result};
 
-/// Exhaustive enum of the all available colors.
+/// Exhaustive enum of the available colors in chess.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum Color {
     White,
     Black,
 }
 
-/// The number of different colors in the game of chess.
+/// The number of different colors available.
 pub const NUM_COLORS: usize = 2;
 /// An [`array`] containing the colors with placement corresponding to their respective index.
 pub const COLORS: [Color; NUM_COLORS] = [Color::White, Color::Black];
@@ -20,12 +20,21 @@ impl Color {
         *self as usize
     }
 
-    /// Create a new [`Color`] given a string.
+    /// Create a new [`Color`] from a given string.
+    ///
+    /// # Panics
+    /// If either the string is empty or the string does not contain any of the characters
+    /// ('w', 'W', 'b', 'B') as the first character in the string.
+    pub fn from_str(s: &str) -> Color {
+        Color::try_from_str(s).unwrap()
+    }
+
+    /// Create a new [`Color`] from a given string.
     ///
     /// # Errors
-    /// If either the string is empty or the string does not contain any of ('w', 'W', 'b', 'B')
-    /// as the first character.
-    pub fn from_str(s: &str) -> Result<Color> {
+    /// Returns a [`ChessifyError::UnknownColor`] error if either the string is empty or the string does not contain any of the characters
+    /// ('w', 'W', 'b', 'B') as the first character in the string.
+    pub fn try_from_str(s: &str) -> Result<Color> {
         match s.chars().next() {
             Some(c) => match c {
                 'w' | 'W' => Ok(Color::White),
@@ -51,5 +60,37 @@ mod tests {
     fn index_lookup() {
         assert_eq!(Color::White, COLORS[0]);
         assert_eq!(Color::Black, COLORS[Color::Black.as_index()]);
+    }
+
+    #[test]
+    fn try_from_str_ok() {
+        assert_eq!(Color::White, Color::try_from_str("W").unwrap());
+        assert_eq!(Color::White, Color::try_from_str("w").unwrap());
+        assert_eq!(Color::Black, Color::try_from_str("B").unwrap());
+        assert_eq!(Color::Black, Color::try_from_str("b").unwrap());
+    }
+
+    #[test]
+    #[should_panic]
+    fn try_from_str_err_empty() {
+        Color::try_from_str("").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn try_from_str_err() {
+        Color::try_from_str("aaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbcccc").unwrap();
+    }
+
+    #[test]
+    fn from_str() {
+        assert_eq!(Color::White, Color::from_str("w"));
+        assert_eq!(Color::Black, Color::from_str("B"));
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_str_err() {
+        Color::from_str("q");
     }
 }

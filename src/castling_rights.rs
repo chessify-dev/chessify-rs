@@ -31,10 +31,10 @@ impl CastlingStatus {
 
 ///
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, PartialOrd)]
-pub struct CastlingRights(u8);
+pub struct CastlingRights(pub u8);
 
-pub const NO_CASTLING_RIGHTS: CastlingRights = CastlingRights(0);
-pub const FULL_CASTLING_RIGHTS:  CastlingRights = CastlingRights(15);
+pub const NO_CASTLING_RIGHTS: CastlingRights = CastlingRights(0u8);
+pub const FULL_CASTLING_RIGHTS: CastlingRights = CastlingRights(15u8);
 
 impl CastlingRights {
     ///
@@ -53,7 +53,7 @@ impl CastlingRights {
                 'q' => b |= 1u8 << 0,
                 _ => return Err(Box::new(ChessifyError::InvalidFen(s.to_string()))),
             };
-        };
+        }
         Ok(CastlingRights(b))
     }
 
@@ -122,7 +122,5 @@ mod tests {
 
         assert_eq!(CastlingStatus::Queenside, wr3);
         assert_eq!(CastlingStatus::Queenside, br3);
-
     }
 }
-

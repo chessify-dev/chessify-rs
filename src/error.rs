@@ -14,10 +14,18 @@ pub enum ChessifyError {
     #[error("`{0}` is an invalid FEN string")]
     InvalidFen(String),
 
+    #[error("could not parse `{0}` as `{0}`")]
+    ParsingError(String, String),
+
+    #[error("could not parse `{0}` as castling rights")]
+    UnknownCastlingRights(String),
+
     #[error("could not parse `{0}` as a color")]
     UnknownColor(String),
+
+    #[error("could not parse `{0}` as a square")]
+    UnknownSquare(String),
 
     #[error("unknown chessify error")]
     Unknown,
 }
-
