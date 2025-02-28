@@ -1,4 +1,4 @@
-use crate::error::{ChessifyError, Result};
+use crate::error::ChessifyError;
 
 use std::fmt;
 
@@ -191,16 +191,9 @@ impl TryFrom<&str> for Square {
             return Err(ChessifyError::UnknownSquare(s.to_string()));
         }
 
-        let file: File = File::try_from(s.to_lowercase().chars().nth(0).ok_or_else(|| {
-            ChessifyError::UnknownSquare(s.to_string())
-        })?)?;
-
-        let rank: Rank = Rank::try_from(s.chars().nth(1).ok_or_else(|| {
-            ChessifyError::UnknownSquare(s.to_string())
-        })?)?;
-
+        let file: File = File::try_from(s.to_lowercase().chars().nth(0).unwrap())?;
+        let rank: Rank = Rank::try_from(s.chars().nth(1).unwrap())?;
         Ok(Square(rank.0 * 8 + file.0))
-
     }
 }
 
@@ -219,11 +212,65 @@ mod tests {
         let h1 = Square::from_str("h1");
         let c8 = Square::from_str("c8");
         let e4 = Square::from_str("E4");
+        let a3 = Square::from_str("a3");
+        let b2 = Square::from_str("b2");
+        let g5 = Square::from_str("g5");
+        let d6 = Square::from_str("d6");
 
         assert_eq!(Square(63), h1);
         assert_eq!(Square::new(2), c8);
         assert_eq!(Square::from_index(36 as usize), e4);
         assert_eq!(63 as usize, h1.index());
+        assert_eq!(2, a3.rank().0);
+        assert_eq!(1, b2.file().0);
+        assert_eq!(4, g5.rank().0);
+        assert_eq!(3, d6.file().0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_str_err_too_short() {
+        Square::from_str("a");
+    }
+
+    #[test]
+
+    #[test]
+    fn file_from_str_ok() {
+        assert_eq!(0, File::try_from("a").unwrap().0);
+        assert_eq!(1, File::try_from("b").unwrap().0);
+        assert_eq!(2, File::try_from("c").unwrap().0);
+        assert_eq!(3, File::try_from("d").unwrap().0);
+        assert_eq!(4, File::try_from("e").unwrap().0);
+        assert_eq!(5, File::try_from("f").unwrap().0);
+        assert_eq!(5, File::try_from("F").unwrap().0);
+        assert_eq!(6, File::try_from("g").unwrap().0);
+        assert_eq!(7, File::try_from("h").unwrap().0);
+        assert_eq!(7, File::try_from("H").unwrap().0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn file_from_str_err() {
+        File::try_from("q").unwrap();
+    }
+
+    #[test]
+    fn rank_from_str_ok() {
+        assert_eq!(7, Rank::try_from("1").unwrap().0);
+        assert_eq!(6, Rank::try_from("2").unwrap().0);
+        assert_eq!(5, Rank::try_from("3").unwrap().0);
+        assert_eq!(4, Rank::try_from("4").unwrap().0);
+        assert_eq!(3, Rank::try_from("5").unwrap().0);
+        assert_eq!(2, Rank::try_from("6").unwrap().0);
+        assert_eq!(1, Rank::try_from("7").unwrap().0);
+        assert_eq!(0, Rank::try_from("8").unwrap().0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn rank_from_str_err() {
+        Rank::try_from("9").unwrap();
     }
 
     #[test]

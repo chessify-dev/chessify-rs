@@ -13,6 +13,7 @@ pub enum Piece {
 
 /// The number of different pieces in the game of chess.
 pub const NUM_PIECES: usize = 6;
+
 /// An [`array`] containing the pieces with placement corresponding to their respective index.
 pub const PIECES: [Piece; NUM_PIECES] = [
     Piece::Pawn,
@@ -66,5 +67,22 @@ mod tests {
     fn index_lookup() {
         assert_eq!(Piece::Pawn, PIECES[0]);
         assert_eq!(Piece::Rook, PIECES[Piece::Rook.as_index()]);
+    }
+
+    #[test]
+    fn to_string() {
+        assert_eq!("P".to_string(), Piece::Pawn.to_string(Color::White));
+        assert_eq!("N".to_string(), Piece::Knight.to_string(Color::White));
+        assert_eq!("B".to_string(), Piece::Bishop.to_string(Color::White));
+        assert_eq!("R".to_string(), Piece::Rook.to_string(Color::White));
+        assert_eq!("Q".to_string(), Piece::Queen.to_string(Color::White));
+        assert_eq!("K".to_string(), Piece::King.to_string(Color::White));
+
+        assert_eq!("p".to_string(), Piece::Pawn.to_string(Color::Black));
+        assert_eq!("n".to_string(), Piece::Knight.to_string(Color::Black));
+        assert_eq!("b".to_string(), Piece::Bishop.to_string(Color::Black));
+        assert_eq!("r".to_string(), Piece::Rook.to_string(Color::Black));
+        assert_eq!("q".to_string(), Piece::Queen.to_string(Color::Black));
+        assert_eq!("k".to_string(), Piece::King.to_string(Color::Black));
     }
 }
