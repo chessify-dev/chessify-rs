@@ -1,7 +1,7 @@
 use crate::color::Color;
 use crate::error::{ChessifyError, Result};
 
-///
+/// Exhaustive enum of the castling availability status for a color.
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum CastlingStatus {
@@ -17,14 +17,18 @@ impl CastlingStatus {
         *self as usize
     }
 
-    ///
     pub fn from_u8(b: u8) -> Self {
+        CastlingStatus::try_from_u8(b).unwrap()
+    }
+
+    ///
+    pub fn try_from_u8(b: u8) -> Result<Self> {
         match b {
-            0 => CastlingStatus::NotAvailable,
-            1 => CastlingStatus::Queenside,
-            2 => CastlingStatus::Kingside,
-            3 => CastlingStatus::Both,
-            _ => panic!(""),
+            0 => Ok(CastlingStatus::NotAvailable),
+            1 => Ok(CastlingStatus::Queenside),
+            2 => Ok(CastlingStatus::Kingside),
+            3 => Ok(CastlingStatus::Both),
+            _ => Err(Box::new(ChessifyError::UnknownCastlingRights(b.to_string()))),
         }
     }
 }
@@ -39,22 +43,7 @@ pub const FULL_CASTLING_RIGHTS: CastlingRights = CastlingRights(15u8);
 impl CastlingRights {
     ///
     pub fn from_str(s: &str) -> Self {
-        CastlingRights::try_from_str(s).unwrap()
-    }
-
-    ///
-    pub fn try_from_str(s: &str) -> Result<Self> {
-        let mut b: u8 = 0;
-        for c in s.chars() {
-            match c {
-                'K' => b |= 1u8 << 3,
-                'Q' => b |= 1u8 << 2,
-                'k' => b |= 1u8 << 1,
-                'q' => b |= 1u8 << 0,
-                _ => return Err(Box::new(ChessifyError::InvalidFen(s.to_string()))),
-            };
-        }
-        Ok(CastlingRights(b))
+        CastlingRights::try_from(s).unwrap()
     }
 
     ///
@@ -63,6 +52,24 @@ impl CastlingRights {
             Color::White => CastlingStatus::from_u8((self.0 & 12) >> 2),
             Color::Black => CastlingStatus::from_u8(self.0 & 3),
         }
+    }
+}
+
+impl TryFrom<&str> for CastlingRights {
+    type Error = ChessifyError;
+
+    fn try_from(s: &str) -> std::result::Result<Self, Self::Error> {
+        let mut b: u8 = 0;
+        for c in s.chars() {
+            match c {
+                'K' => b |= 1u8 << 3,
+                'Q' => b |= 1u8 << 2,
+                'k' => b |= 1u8 << 1,
+                'q' => b |= 1u8 << 0,
+                _ => return Err(ChessifyError::InvalidFen(s.to_string())),
+            }
+        };
+        Ok(CastlingRights(b))
     }
 }
 
@@ -85,19 +92,18 @@ mod tests {
     #[test]
     #[should_panic]
     fn from_str_err() {
-        let _cr = CastlingRights::from_str("abc");
+        CastlingRights::from_str("abc");
     }
 
     #[test]
     fn try_from_str_ok() {
-        let cr = CastlingRights::try_from_str("Kq").unwrap();
-        assert_eq!(CastlingRights(9), cr);
+        assert_eq!(CastlingRights(9), CastlingRights::try_from("Kq").unwrap());
     }
 
     #[test]
     #[should_panic]
     fn try_from_str_err() {
-        let _cr = CastlingRights::try_from_str("KQb").unwrap();
+        CastlingRights::try_from("KQb").unwrap();
     }
 
     #[test]
