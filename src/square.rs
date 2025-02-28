@@ -225,6 +225,20 @@ mod tests {
         assert_eq!(1, b2.file().0);
         assert_eq!(4, g5.rank().0);
         assert_eq!(3, d6.file().0);
+
+        assert_eq!("h1".to_string(), h1.to_string());
+        assert_eq!("c8".to_string(), c8.to_string());
+        assert_eq!("e4".to_string(), e4.to_string());
+        assert_eq!("a3".to_string(), a3.to_string());
+        assert_eq!("b2".to_string(), b2.to_string());
+        assert_eq!("g5".to_string(), g5.to_string());
+        assert_eq!("d6".to_string(), d6.to_string());
+    }
+
+    #[test]
+    #[should_panic]
+    fn file_to_string_err() {
+        File(10).to_string();
     }
 
     #[test]
@@ -234,6 +248,10 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn from_str_err_unknown_rank() {
+        Square::from_str("a9");
+    }
 
     #[test]
     fn file_from_str_ok() {
@@ -292,7 +310,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn from_str_err() {
+    fn from_str_err_unknown_file() {
         Square::from_str("q4");
     }
 }
