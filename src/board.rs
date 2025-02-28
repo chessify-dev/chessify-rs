@@ -4,6 +4,7 @@ use crate::color::{Color, NUM_COLORS};
 use crate::error::{ChessifyError, Result};
 use crate::piece::{Piece, NUM_PIECES};
 use crate::square::Square;
+use crate::CastlingStatus;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -11,7 +12,7 @@ use std::fmt;
 /// The standard starting position in chess.
 pub const DEFAULT_BOARD_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-///
+/// Implementation of a chess board.
 #[derive(Debug)]
 pub struct Board {
     bitboards: [Bitboard; NUM_PIECES * 2],
@@ -19,9 +20,41 @@ pub struct Board {
     side_to_move: Color,
     castling_rights: CastlingRights,
     en_passante_square: Option<Square>,
+    halfmove_clock: usize,
+    fullmove_number: usize,
 }
 
 impl Board {
+    /// Get the current bitboards representing the board position.
+    pub fn bitboards(&self) -> &[Bitboard; NUM_PIECES * 2] {
+        &self.bitboards
+    }
+
+    /// Get the current mapping of what pieces exist on what squares.
+    pub fn pieces(&self) -> &HashMap<usize, (Piece, Color)> {
+        &self.pieces
+    }
+
+    /// Get which players turn it is to make a move.
+    pub fn side_to_move(&self) -> Color {
+        self.side_to_move
+    }
+
+    /// Get the current castling rights for the position.
+    pub fn castling_rights(&self) -> CastlingRights {
+        self.castling_rights
+    }
+
+    /// Get the current castling rights for a specific color.
+    pub fn castling_status_for(&self, c: Color) -> CastlingStatus {
+        self.castling_rights.for_color(c)
+    }
+
+    /// Get the possible en passante square if there is one.
+    pub fn en_passante_square(&self) -> Option<Square> {
+        self.en_passante_square
+    }
+
     /// Create a new [`Board`] that is completely empty.
     pub fn empty() -> Self {
         Board {
@@ -30,6 +63,8 @@ impl Board {
             side_to_move: Color::White,
             castling_rights: NO_CASTLING_RIGHTS,
             en_passante_square: None,
+            halfmove_clock: 0,
+            fullmove_number: 0,
         }
     }
 
@@ -88,18 +123,21 @@ impl fmt::Display for Board {
             writeln!(f, "|")?;
         }
         writeln!(f, "   +------------------------+")?;
-        writeln!(f, "     a  b  c  d  e  f  g  h")
+        writeln!(f, "     a  b  c  d  e  f  g  h")?;
+        writeln!(f, "\n       To move: {}  ({}, {})", self.side_to_move, self.halfmove_clock, self.fullmove_number)
     }
 }
 
-///
+/// A helper struct for building an instance of a [`Board`] struct.
 #[derive(Debug, Default)]
 pub struct BoardBuilder {
     bitboards: Option<[Bitboard; NUM_PIECES * NUM_COLORS]>,
-    pieces: Option<HashMap<usize, (Piece, Color)>>,
+    pieces: HashMap<usize, (Piece, Color)>,
     side_to_move: Option<Color>,
     castling_rights: Option<CastlingRights>,
     en_passante_square: Option<Square>,
+    halfmove_clock: usize,
+    fullmove_number: usize,
 }
 
 impl BoardBuilder {
@@ -108,22 +146,22 @@ impl BoardBuilder {
         BoardBuilder::default()
     }
 
+    /// Create a new [`Board`]  from the current [`BoardBuilder`] instance.
     ///
+    /// # Panics
+    /// Iff not all required fields had been set.
     pub fn build(self) -> Board {
         self.try_build().unwrap()
     }
 
+    /// Try and create a new [`Board`] from the current [`BoardBuilder`] instance.
     ///
+    /// # Errors
+    /// Iff not all required fields had been set.
     pub fn try_build(self) -> Result<Board> {
         let bitboards: [Bitboard; NUM_PIECES * NUM_COLORS] = self.bitboards.ok_or_else(|| {
             Box::new(ChessifyError::BoardSetup(
                 "Bitboards not initialized".to_string(),
-            ))
-        })?;
-
-        let pieces: HashMap<usize, (Piece, Color)> = self.pieces.ok_or_else(|| {
-            Box::new(ChessifyError::BoardSetup(
-                "Pieces HashMap not initialized".to_string(),
             ))
         })?;
 
@@ -137,16 +175,31 @@ impl BoardBuilder {
             .castling_rights
             .ok_or_else(|| Box::new(ChessifyError::BoardSetup("".to_string())))?;
 
+
         Ok(Board {
             bitboards,
-            pieces,
+            pieces: self.pieces,
             side_to_move,
             castling_rights,
             en_passante_square: self.en_passante_square,
+            halfmove_clock: self.halfmove_clock,
+            fullmove_number: self.fullmove_number,
         })
     }
 
+    /// Set up a board state from a provided FEN string.
     ///
+    /// # Panics
+    /// If the provided FEN string was invalid.
+    ///
+    /// # Details
+    /// Forsyth–Edwards Notation (FEN) is a standard notation for describing a
+    /// particular board position of a chess game. The purpose of FEN is to
+    /// provide all the necessary information to restart a game from a particular
+    /// position [wikipedia link](https://en.wikipedia.org/wiki/Forsyth–Edwards_Notation).
+    ///
+    /// Below you can see the FEN for the starting position:
+    /// rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     pub fn from_fen(fen: &str) -> BoardBuilder {
         BoardBuilder::try_from_fen(fen).unwrap()
     }
@@ -164,15 +217,6 @@ impl BoardBuilder {
     ///
     /// Below you can see the FEN for the starting position:
     /// rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-    ///
-    /// from which we can see that the FEN contains 6 main fields:
-    ///     1. Piece placement information
-    ///     2. Active color (player to make a move)
-    ///     3. Castling availability
-    ///     4. En passant target square
-    ///     5. Halfmove clock
-    ///     6. Fullmove number
-    ///
     pub fn try_from_fen(fen: &str) -> Result<BoardBuilder> {
         let parts: Vec<&str> = fen.split_whitespace().collect();
         if parts.len() < 4 {
@@ -208,7 +252,9 @@ impl BoardBuilder {
 
             match c {
                 '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' => {
-                    file += c as usize;
+                    // We need to subtract 48 here because the char '1' byte value is 49.
+                    // See the ASCII table for more details: https://www.ascii-code.com
+                    file += (c as usize) - 48;
                     continue;
                 }
                 'P' => {
@@ -283,19 +329,30 @@ impl BoardBuilder {
 
         let side_to_move: Color = Color::try_from_str(active_color_str)?;
 
-        let castling_rights: CastlingRights = CastlingRights::try_from_str(castling_rights_str)?;
+        let castling_rights: CastlingRights = CastlingRights::try_from(castling_rights_str)?;
 
         let en_passante_square: Option<Square> = match en_passant_square_str {
             "-" => None,
-            _ => todo!(),
+            _ => Some(Square::try_from(en_passant_square_str)?),
         };
+
+
+        let mut halfmove_clock: usize = 0;
+        let mut fullmove_number: usize = 0;
+
+        if parts.len() == 6 {
+            halfmove_clock = parts[4].parse()?;
+            fullmove_number = parts[5].parse()?;
+        }
 
         Ok(BoardBuilder {
             bitboards: Some(bitboards),
-            pieces: Some(pieces),
+            pieces,
             side_to_move: Some(side_to_move),
             castling_rights: Some(castling_rights),
             en_passante_square,
+            halfmove_clock,
+            fullmove_number,
         })
     }
 }
