@@ -1,5 +1,7 @@
 use crate::error::{ChessifyError, Result};
 
+use std::fmt;
+
 /// Exhaustive enum of the available colors in chess.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum Color {
@@ -42,6 +44,15 @@ impl Color {
                 _ => Err(Box::new(ChessifyError::UnknownColor(s.to_string()))),
             },
             None => Err(Box::new(ChessifyError::UnknownColor(s.to_string()))),
+        }
+    }
+}
+
+impl fmt::Display for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Color::White => write!(f, "W"),
+            Color::Black => write!(f, "B"),
         }
     }
 }
